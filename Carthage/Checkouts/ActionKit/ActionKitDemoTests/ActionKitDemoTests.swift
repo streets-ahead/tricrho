@@ -1,15 +1,15 @@
 //
-//  TricrhoTests.swift
-//  TricrhoTests
+//  ActionKitDemoTests.swift
+//  ActionKitDemoTests
 //
-//  Created by sam mussell on 12/20/15.
-//  Copyright © 2015 salabs. All rights reserved.
+//  Created by Dirk van Oosterbosch on 10/07/15.
+//  Licensed under the terms of the MIT license
 //
 
+import UIKit
 import XCTest
-@testable import Tricrho
 
-class TricrhoTests: XCTestCase {
+class ActionKitDemoTests: XCTestCase {
     
     override func setUp() {
         super.setUp()
@@ -23,12 +23,12 @@ class TricrhoTests: XCTestCase {
     
     func testExample() {
         // This is an example of a functional test case.
-        // Use XCTAssert and related functions to verify your tests produce the correct results.
+        XCTAssert(true, "Pass")
     }
     
     func testPerformanceExample() {
         // This is an example of a performance test case.
-        self.measureBlock {
+        self.measureBlock() {
             // Put the code you want to measure the time of here.
         }
     }

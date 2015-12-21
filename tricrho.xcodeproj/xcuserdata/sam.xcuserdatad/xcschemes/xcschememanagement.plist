@@ -4,10 +4,15 @@
 <dict>
 	<key>SchemeUserState</key>
 	<dict>
+		<key>Tricrho.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>1</integer>
+		</dict>
 		<key>tricrho.xcscheme</key>
 		<dict>
 			<key>orderHint</key>
-			<integer>0</integer>
+			<integer>2</integer>
 		</dict>
 	</dict>
 	<key>SuppressBuildableAutocreation</key>
@@ -23,6 +28,26 @@
 			<true/>
 		</dict>
 		<key>223FDD501C25DF51006CD0D2</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>228D707B1C27ADC100BA5E9A</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>228D70841C27ADC100BA5E9A</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>22BF61E91C2784990068AD9B</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>22BF61F21C2784990068AD9B</key>
 		<dict>
 			<key>primary</key>
 			<true/>
