@@ -75,10 +75,32 @@ extension CIImage {
 class CameraViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDelegate {
 
   let session: AVCaptureSession = AVCaptureSession()
+  var previewLayer: AVCaptureVideoPreviewLayer = AVCaptureVideoPreviewLayer()
   var skipped = 0
   var snapping = false
   var images = [CIImage]()
   
+  func getOrientation(orientation: UIDeviceOrientation) -> AVCaptureVideoOrientation{
+    switch(orientation){
+    case .LandscapeLeft:
+      print("Left");
+      return AVCaptureVideoOrientation.LandscapeRight
+    case .LandscapeRight:
+      return AVCaptureVideoOrientation.LandscapeLeft
+    default:
+      print("¯\\_(ツ)_/¯")
+      return AVCaptureVideoOrientation.Portrait
+    }
+  }
+  
+  override func didRotateFromInterfaceOrientation(fromInterfaceOrientation: UIInterfaceOrientation) {
+    print("did Rotate suckaz")
+    previewLayer.frame = self.view.bounds
+    print(UIDevice.currentDevice().orientation)
+    let connection:AVCaptureConnection  = previewLayer.connection
+    let deviceOrientation: UIDeviceOrientation = UIDevice.currentDevice().orientation
+    connection.videoOrientation = self.getOrientation(deviceOrientation)
+  }
 
   override func viewDidLoad() {
     super.viewDidLoad()
@@ -109,7 +131,7 @@ class CameraViewController: UIViewController, AVCaptureVideoDataOutputSampleBuff
           
           session.addOutput(videoOutput)
           
-          let previewLayer = AVCaptureVideoPreviewLayer(session: session)
+          previewLayer = AVCaptureVideoPreviewLayer(session: session)
           
           let v: LayerFitView = self.view as! LayerFitView
           v.addSizedLayer(previewLayer)
