@@ -6,22 +6,22 @@ import GLKit
 
 import ObjectiveC
 
-typealias BlockButtonActionBlock = (sender: UIButton) -> Void
+typealias BlockButtonActionBlock = (_ sender: UIButton) -> Void
 
 class ButtonCreator : NSObject {
   let button: UIButton
 
   init(withLabel label: String) {
-    button = UIButton(type: .System)
-    button.setTitle(label, forState: .Normal)
-    button.tintColor = UIColor.redColor()
-    button.backgroundColor = UIColor.whiteColor()
+    button = UIButton(type: .system)
+    button.setTitle(label, for: UIControlState())
+    button.tintColor = UIColor.red
+    button.backgroundColor = UIColor.white
     button.layer.cornerRadius = 5.0
     
     super.init()
   }
   
-  func frame(frame: CGRect) -> ButtonCreator {
+  func frame(_ frame: CGRect) -> ButtonCreator {
     button.frame = frame
     return self
   }
@@ -34,20 +34,20 @@ var ActionBlockKey: UInt8 = 0
 
 class ActionBlockWrapper : NSObject {
   var block : BlockButtonActionBlock
-  init(block: BlockButtonActionBlock) {
+  init(block: @escaping BlockButtonActionBlock) {
     self.block = block
   }
 }
 
 extension UIButton {
-  func onTouchUpInside(closure: BlockButtonActionBlock) {
+  func onTouchUpInside(_ closure: @escaping BlockButtonActionBlock) {
     objc_setAssociatedObject(self, &ActionBlockKey, ActionBlockWrapper(block: closure), objc_AssociationPolicy.OBJC_ASSOCIATION_RETAIN_NONATOMIC)
-    addTarget(self, action: "block_handleAction:", forControlEvents: .TouchUpInside)
+    addTarget(self, action: #selector(UIButton.block_handleAction(_:)), for: .touchUpInside)
   }
   
-  func block_handleAction(sender: UIButton) {
+  func block_handleAction(_ sender: UIButton) {
     let wrapper = objc_getAssociatedObject(self, &ActionBlockKey) as! ActionBlockWrapper
-    wrapper.block(sender: sender)
+    wrapper.block(sender)
   }
 }
 
@@ -55,7 +55,7 @@ extension UIButton {
 class LayerFitView : UIView {
   var sizeableLayer = CALayer()
   
-  func addSizedLayer(layer: CALayer) {
+  func addSizedLayer(_ layer: CALayer) {
     self.layer.frame = self.bounds
     self.layer.addSublayer(layer)
     self.sizeableLayer = layer
@@ -68,62 +68,59 @@ class LayerFitView : UIView {
 
 extension CIImage {
   convenience init(buffer: CMSampleBuffer) {
-    self.init(CVPixelBuffer: CMSampleBufferGetImageBuffer(buffer)!)
+    self.init(cvPixelBuffer: CMSampleBufferGetImageBuffer(buffer)!)
   }
 }
 
 class CameraViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDelegate {
 
-  let session: AVCaptureSession = AVCaptureSession()
-  var previewLayer: AVCaptureVideoPreviewLayer = AVCaptureVideoPreviewLayer()
+  var session = AVCaptureSession()
+  var previewLayer = AVCaptureVideoPreviewLayer()
   var skipped = 0
   var snapping = false
   var images = [CIImage]()
   
-  func getOrientation(orientation: UIDeviceOrientation) -> AVCaptureVideoOrientation{
+  func getOrientation(_ orientation: UIInterfaceOrientation) -> AVCaptureVideoOrientation{
     switch(orientation){
-    case .LandscapeLeft:
+    case .landscapeLeft:
       print("Left");
-      return AVCaptureVideoOrientation.LandscapeRight
-    case .LandscapeRight:
-      return AVCaptureVideoOrientation.LandscapeLeft
+      return .landscapeLeft
+    case .landscapeRight:
+      return .landscapeRight
     default:
       print("¯\\_(ツ)_/¯")
-      return AVCaptureVideoOrientation.Portrait
+      return .portrait
     }
   }
   
-  override func didRotateFromInterfaceOrientation(fromInterfaceOrientation: UIInterfaceOrientation) {
-    print("did Rotate suckaz")
+  override func willRotate(to toInterfaceOrientation: UIInterfaceOrientation, duration: TimeInterval) {
+    print("will Rotate suckaz")
     previewLayer.frame = self.view.bounds
-    print(UIDevice.currentDevice().orientation)
+    print(UIDevice.current.orientation)
     let connection:AVCaptureConnection  = previewLayer.connection
-    let deviceOrientation: UIDeviceOrientation = UIDevice.currentDevice().orientation
-    connection.videoOrientation = self.getOrientation(deviceOrientation)
-  }
+    connection.videoOrientation = .portrait
 
+  }
+  
   override func viewDidLoad() {
     super.viewDidLoad()
-    print("hellow2")
-    
     
     var backCameraDevice: AVCaptureDevice?
     
-    let availableCameraDevices = AVCaptureDevice.devicesWithMediaType(AVMediaTypeVideo)
+    let devicesTypes: [AVCaptureDeviceType] = [.builtInDuoCamera, .builtInWideAngleCamera]
+    let availableCameraDevices = AVCaptureDeviceDiscoverySession(deviceTypes: devicesTypes, mediaType: nil, position: .back)
     
-    for device in availableCameraDevices as! [AVCaptureDevice] {
-      if device.position == .Back {
-        print("back")
-        backCameraDevice = device
-        break
-      }
+    for device in availableCameraDevices!.devices {
+      print("found device", device)
+      backCameraDevice = device
     }
     
     if let bcd = backCameraDevice {
       do {
         let possibleCameraInput = try AVCaptureDeviceInput(device: bcd)
         let videoOutput = AVCaptureVideoDataOutput()
-        videoOutput.setSampleBufferDelegate(self, queue: dispatch_queue_create("sample buffer delegate", DISPATCH_QUEUE_SERIAL))
+        videoOutput.setSampleBufferDelegate(self, queue: DispatchQueue(label: "sample buffer delegate", attributes: []))
+        
         
         if session.canAddInput(possibleCameraInput) {
           print("adding")
@@ -141,17 +138,17 @@ class CameraViewController: UIViewController, AVCaptureVideoDataOutputSampleBuff
           print("camera time bitches")
           
           let button = ButtonCreator(withLabel: "")
-            .frame(CGRectMake((self.view.bounds.width / 2) - 34, self.view.bounds.height - 88, 68, 68)).button
+            .frame(CGRect(x: (self.view.bounds.width / 2) - 34, y: self.view.bounds.height - 88, width: 68, height: 68)).button
           
-          button.setImage(UIImage(named: "snap"), forState: .Normal)
-          button.backgroundColor = UIColor.clearColor()
-          button.tintColor = UIColor.whiteColor()
+          button.setImage(UIImage(named: "snap"), for: UIControlState())
+          button.backgroundColor = UIColor.clear
+          button.tintColor = UIColor.white
           button.onTouchUpInside { sender in
             self.snapping = true
           }
           
           self.view.addSubview(button)
-          self.view.bringSubviewToFront(button)
+          self.view.bringSubview(toFront: button)
           
           print("camera time bitches")
         }
@@ -165,51 +162,51 @@ class CameraViewController: UIViewController, AVCaptureVideoDataOutputSampleBuff
     }
   }
   
-  func image(image: UIImage, didFinishSavingWithError error: NSError?, contextInfo:UnsafePointer<Void>) {
+  func image(_ image: UIImage, didFinishSavingWithError error: NSError?, contextInfo:UnsafeRawPointer) {
     if error == nil {
-      let ac = UIAlertController(title: "Saved!", message: "Your altered image has been saved to your photos.", preferredStyle: .Alert)
-      ac.addAction(UIAlertAction(title: "OK", style: .Default, handler: nil))
-      presentViewController(ac, animated: true, completion: nil)
+      let ac = UIAlertController(title: "Saved!", message: "Your altered image has been saved to your photos.", preferredStyle: .alert)
+      ac.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
+      present(ac, animated: true, completion: nil)
     } else {
-      let ac = UIAlertController(title: "Save error", message: error?.localizedDescription, preferredStyle: .Alert)
-      ac.addAction(UIAlertAction(title: "OK", style: .Default, handler: nil))
-      presentViewController(ac, animated: true, completion: nil)
+      let ac = UIAlertController(title: "Save error", message: error?.localizedDescription, preferredStyle: .alert)
+      ac.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
+      present(ac, animated: true, completion: nil)
     }
   }
   
-  func showPreview(image: CIImage) {
-    let img = UIImage(CIImage: image, scale: 1, orientation: UIImageOrientation.Up)
+  func showPreview(_ image: CIImage) {
+    let img = UIImage(ciImage: image)
     let imgView = UIImageView(image: img)
-    imgView.contentMode = .ScaleAspectFit
-    imgView.frame = self.view.frame
+    
+    imgView.contentMode = .scaleAspectFit
+    imgView.frame = self.view.bounds
+    
     self.view.addSubview(imgView)
     
-    let button = ButtonCreator(withLabel: "Close")
-      .frame(CGRectMake(self.view.bounds.width - 130, self.view.bounds.height - 80, 100, 50)).button
+    let cancelButton = ButtonCreator(withLabel: "Close")
+      .frame(CGRect(x: self.view.bounds.width - 130, y: self.view.bounds.height - 80, width: 100, height: 50)).button
     
     let saveButton = ButtonCreator(withLabel: "Save")
-      .frame(CGRectMake(30, self.view.bounds.height - 80, 100, 50)).button
+      .frame(CGRect(x: 30, y: self.view.bounds.height - 80, width: 100, height: 50)).button
     
-    button.onTouchUpInside { sender in
+    cancelButton.onTouchUpInside { sender in
       print("closing")
       imgView.removeFromSuperview()
-      button.removeFromSuperview()
+      cancelButton.removeFromSuperview()
       saveButton.removeFromSuperview()
       self.session.startRunning()
     }
 
-    self.view.addSubview(button)
+    self.view.addSubview(cancelButton)
 
-    
-    
     
     saveButton.onTouchUpInside { sender in
       print("savign")
       let imageContext = CIContext(options:nil)
-      let i = imageContext.createCGImage(image, fromRect: image.extent)
-      UIImageWriteToSavedPhotosAlbum(UIImage(CGImage: i), self, "image:didFinishSavingWithError:contextInfo:", nil)
+      let img = imageContext.createCGImage(image, from: image.extent)
+      UIImageWriteToSavedPhotosAlbum(UIImage(cgImage: img!), self, #selector(CameraViewController.image(_:didFinishSavingWithError:contextInfo:)), nil)
       imgView.removeFromSuperview()
-      button.removeFromSuperview()
+      cancelButton.removeFromSuperview()
       saveButton.removeFromSuperview()
       self.session.startRunning()
     }
@@ -220,13 +217,14 @@ class CameraViewController: UIViewController, AVCaptureVideoDataOutputSampleBuff
     
   }
   
-  func captureOutput(captureOutput: AVCaptureOutput!, didOutputSampleBuffer sampleBuffer: CMSampleBuffer!,
-                    fromConnection connection: AVCaptureConnection!) {
+  func captureOutput(_ captureOutput: AVCaptureOutput!, didOutputSampleBuffer sampleBuffer: CMSampleBuffer!,
+                    from connection: AVCaptureConnection!) {
     if snapping {
       skipped = skipped + 1
       switch skipped {
         case 1, 10, 20:
           let image = CIImage(buffer: sampleBuffer)
+          
           print("found image")
           print(image)
           images.append(image)
@@ -238,7 +236,7 @@ class CameraViewController: UIViewController, AVCaptureVideoDataOutputSampleBuff
           let blue = extractChannel("blue", fromImage: images[2])
           let combined = recompose(red: red, green: green, blue: blue)
           let rotated = rotate(-M_PI / 2)(combined)
-          dispatch_async(dispatch_get_main_queue()) { [unowned self] in
+          DispatchQueue.main.async { [unowned self] in
             self.showPreview(rotated)
           }
           images = [CIImage]()
@@ -250,7 +248,7 @@ class CameraViewController: UIViewController, AVCaptureVideoDataOutputSampleBuff
     }
   }
 
-  override func viewWillAppear(animated: Bool) {
+  override func viewWillAppear(_ animated: Bool) {
     super.viewWillAppear(animated)
   }
 
