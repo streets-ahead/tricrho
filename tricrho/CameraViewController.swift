@@ -45,24 +45,9 @@ extension UIButton {
     addTarget(self, action: #selector(UIButton.block_handleAction(_:)), for: .touchUpInside)
   }
   
-  func block_handleAction(_ sender: UIButton) {
+  @objc func block_handleAction(_ sender: UIButton) {
     let wrapper = objc_getAssociatedObject(self, &ActionBlockKey) as! ActionBlockWrapper
     wrapper.block(sender)
-  }
-}
-
-
-class LayerFitView : UIView {
-  var sizeableLayer = CALayer()
-  
-  func addSizedLayer(_ layer: CALayer) {
-    self.layer.frame = self.bounds
-    self.layer.addSublayer(layer)
-    self.sizeableLayer = layer
-  }
-  
-  override func layoutSubviews() {
-    self.sizeableLayer.frame = self.bounds
   }
 }
 
@@ -97,20 +82,20 @@ class CameraViewController: UIViewController, AVCaptureVideoDataOutputSampleBuff
     print("will Rotate suckaz")
     previewLayer.frame = self.view.bounds
     print(UIDevice.current.orientation)
-    let connection:AVCaptureConnection  = previewLayer.connection
+    let connection:AVCaptureConnection  = previewLayer.connection!
     connection.videoOrientation = .portrait
 
   }
   
   override func viewDidLoad() {
     super.viewDidLoad()
-    
+    view.backgroundColor = .blue
     var backCameraDevice: AVCaptureDevice?
     
-    let devicesTypes: [AVCaptureDeviceType] = [.builtInDuoCamera, .builtInWideAngleCamera]
-    let availableCameraDevices = AVCaptureDeviceDiscoverySession(deviceTypes: devicesTypes, mediaType: nil, position: .back)
+    let devicesTypes: [AVCaptureDevice.DeviceType] = [AVCaptureDevice.DeviceType.builtInDualCamera, AVCaptureDevice.DeviceType.builtInWideAngleCamera]
+    let availableCameraDevices = AVCaptureDevice.DiscoverySession(deviceTypes: devicesTypes, mediaType: nil, position: .back)
     
-    for device in availableCameraDevices!.devices {
+    for device in availableCameraDevices.devices {
       print("found device", device)
       backCameraDevice = device
     }
@@ -130,8 +115,9 @@ class CameraViewController: UIViewController, AVCaptureVideoDataOutputSampleBuff
           
           previewLayer = AVCaptureVideoPreviewLayer(session: session)
           
-          let v: LayerFitView = self.view as! LayerFitView
-          v.addSizedLayer(previewLayer)
+//          let v: LayerFitView = self.view as! LayerFitView
+          view.layer.addSublayer(previewLayer)
+          previewLayer.frame = view.bounds
 
           session.startRunning()
           
@@ -162,7 +148,7 @@ class CameraViewController: UIViewController, AVCaptureVideoDataOutputSampleBuff
     }
   }
   
-  func image(_ image: UIImage, didFinishSavingWithError error: NSError?, contextInfo:UnsafeRawPointer) {
+  @objc func image(_ image: UIImage, didFinishSavingWithError error: NSError?, contextInfo:UnsafeRawPointer) {
     if error == nil {
       let ac = UIAlertController(title: "Saved!", message: "Your altered image has been saved to your photos.", preferredStyle: .alert)
       ac.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
@@ -217,8 +203,8 @@ class CameraViewController: UIViewController, AVCaptureVideoDataOutputSampleBuff
     
   }
   
-  func captureOutput(_ captureOutput: AVCaptureOutput!, didOutputSampleBuffer sampleBuffer: CMSampleBuffer!,
-                    from connection: AVCaptureConnection!) {
+  func captureOutput(_ captureOutput: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer,
+                    from connection: AVCaptureConnection) {
     if snapping {
       skipped = skipped + 1
       switch skipped {
@@ -235,7 +221,7 @@ class CameraViewController: UIViewController, AVCaptureVideoDataOutputSampleBuff
           let green = extractChannel("green", fromImage: images[1])
           let blue = extractChannel("blue", fromImage: images[2])
           let combined = recompose(red: red, green: green, blue: blue)
-          let rotated = rotate(-M_PI / 2)(combined)
+          let rotated = rotate(-Double.pi / 2)(combined)
           DispatchQueue.main.async { [unowned self] in
             self.showPreview(rotated)
           }
